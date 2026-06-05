@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+httpx
+langchain
+langchain-community
+langchain-huggingface
+langchain-postgres
+pypdf
+asyncpg
+psycopg
