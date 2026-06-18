@@ -2,6 +2,7 @@ import os
 import httpx
 import aiofiles.tempfile
 from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import uvicorn
@@ -16,6 +17,15 @@ load_dotenv()
 
 app = FastAPI(title="LangChain RAG Engine")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.getenv("FRONTEND_URL")],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+
 # NOTE: some advice on model selection taken from
 # https://docs.openwebui.com/troubleshooting/rag/
 
@@ -24,7 +34,7 @@ print("Loading HuggingFace model...")
 embeddings = HuggingFaceEmbeddings(model_name="nomic-ai/nomic-embed-text-v1.5")
 
 # https://docs.langchain.com/oss/python/integrations/vectorstores/pgvectorstore
-# connect to LangChain PGVector store -> using asyncpg instead of psycopg
+# connect to LangChain PGVector store
 CONNECTION_STRING = os.getenv("DATABASE_URL").replace("postgresql://", "postgresql+psycopg://")
 OLLAMA_URL = os.getenv("OLLAMA_URL")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
@@ -155,5 +165,62 @@ async def query_documents(request: QueryRequest):
         print(f"[{request.discord_id}] Error during query execution: {e}")
         raise HTTPException(status_code=500, detail="Internal vector search error.")
     
+"""
+Handle Discord OAuth2.0
+"""
+
+# https://docs.discord.com/developers/topics/oauth2
+class OAuthRequest(BaseModel):
+    code: str
+
+@app.post("/auth/discord", responses={400: {"description": "Failed to authenticate with Discord."}})
+async def authenticate_discord(request: OAuthRequest):
+    """
+    Exchanges the temporary Discord code for the user's actual profile data.
+    """
+    client_id = os.getenv("DISCORD_CLIENT_ID")
+    client_secret = os.getenv("DISCORD_CLIENT_SECRET")
+    redirect_uri = os.getenv("DISCORD_REDIRECT_URI", "http://localhost:5173/") # port 5173 for React Vite
+
+    token_data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "grant_type": "authorization_code",
+        "code": request.code,
+        "redirect_uri": redirect_uri
+    }
+
+    async with httpx.AsyncClient() as client:
+        token_response = await client.post(
+            "https://discord.com/api/oauth2/token", 
+            data=token_data
+        )
+
+        if token_response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to authenticate with Discord.")
+        
+        access_token = token_response.json()["access_token"]
+
+        user_response = await client.get(
+            "https://discord.com/api/users/@me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+
+        if user_response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to fetch discord user data.")
+        
+        user_data = user_response.json()
+
+        # TODO: Implement generation/handling of JWT Tokens
+
+        return {
+            "status": "success",
+            "user": {
+                "discord_id": str(user_data["id"]),
+                "username": user_data["username"],
+                "avatar": f"https://cdn.discordapp.com/avatars/{user_data['id']}/{user_data['avatar']}.png" if user_data.get('avatar') else None
+            }
+        }
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=5000)
+    uvicorn.run(app, host=os.getenv("HOST"), port=5000)

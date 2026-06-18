@@ -1,11 +1,12 @@
-fastapi
-uvicorn
 httpx
-langchain
+aiofiles
+fastapi
+pydantic
+python-dotenv
+uvicorn
 langchain-community
+langchain-text-splitters
 langchain-huggingface
 langchain-postgres
 pypdf
-asyncpg
 psycopg
-aiofiles
