@@ -9,4 +9,7 @@ langchain-text-splitters
 langchain-huggingface
 langchain-postgres
 pypdf
+sqlalchemy
+asyncpg
 psycopg
+PyJWT
