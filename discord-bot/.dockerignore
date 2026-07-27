@@ -1,0 +1,18 @@
+# Node dependencies (reinstalled from scratch inside Docker)
+node_modules/
+
+# Environment files (inject these at runtime via secrets)
+.env
+.env.*
+
+# Runtime config with secrets (inject at runtime)
+config.json
+
+# Logs
+*.log
+logs/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store

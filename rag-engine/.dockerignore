@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# virtual environments
+.venv/
+venv/
+env/
+
+# Environment files (inject these at runtime via secrets)
+.env
+.env.*
+
+# HuggingFace model cache (large, fetched at runtime)
+.cache/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store

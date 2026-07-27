@@ -153,7 +153,7 @@ async def process_pdf_langchain(
     print(f"[{discord_id}] Starting LangChain ingestion for {filename}...")
 
     if local_file:
-        # File was already written to disk by /upload; use it directly.
+        # file was already written to disk by /upload; use it directly.
         tmp_file_path = file_url
     else:
         # Bot path: download from the supplied URL.
@@ -204,7 +204,7 @@ async def ingest_document(
     The file_url must point to a trusted internal or Discord CDN location;
     the bot is responsible for supplying a valid URL.
     """
-    # Re-parse body using the cached bytes set by get_caller_identity (bot path)
+    # reparse body using the cached bytes set by get_caller_identity (bot path)
     # or a fresh parse (web path, body not yet consumed).
     body_bytes = getattr(request.state, "_body", None) or await request.body()
     body = IngestRequest.model_validate_json(body_bytes)
@@ -231,16 +231,16 @@ async def upload_document(
       - File size must not exceed MAX_UPLOAD_BYTES (20 MB)
       - Filename is sanitised with os.path.basename to block path traversal
     """
-    # --- Filename sanitisation (block path traversal) ---
+    # filename sanitisation (block path traversal)
     safe_filename = os.path.basename(file.filename or "upload.pdf")
     if not safe_filename:
         raise HTTPException(status_code=400, detail="Invalid filename.")
 
-    # --- MIME type check ---
+    # mime type check
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(status_code=415, detail="Only PDF files are accepted.")
 
-    # --- Read bytes (enforce size cap) ---
+    # read bytes (enforce size cap)
     contents = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(contents) > MAX_UPLOAD_BYTES:
         raise HTTPException(
@@ -248,11 +248,11 @@ async def upload_document(
             detail=f"File exceeds the {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.",
         )
 
-    # --- Magic-byte validation (%PDF) ---
+    # magic byte validation (%PDF)
     if not contents.startswith(b"%PDF"):
         raise HTTPException(status_code=415, detail="File does not appear to be a valid PDF.")
 
-    # --- Write to a temp file and queue ingestion ---
+    # write to a temp file and queue ingestion
     tmp_path = os.path.join(
         os.getenv("TMPDIR", "/tmp"),
         f"{discord_id}_{uuid.uuid4()}_{safe_filename}"
@@ -439,8 +439,8 @@ async def authenticate_discord(request: OAuthRequest):
         if user_data.get("avatar") else None
     )
 
-    # Sign a JWT containing the user's Discord identity.
-    # The frontend stores this and sends it as "Authorization: Bearer <token>"
+    # sign a JWT containing the user's discord identity.
+    # the frontend stores this and sends it as "Authorization: Bearer <token>"
     # on all subsequent API calls.
     now = datetime.now(tz=timezone.utc)
     app_token = jwt.encode(
