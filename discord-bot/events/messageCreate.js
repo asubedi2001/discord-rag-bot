@@ -1,11 +1,12 @@
 const { Events, MessageFlags, Collection } = require('discord.js');
 const db = require('../db');
+const RAG_API_URL = process.env.RAG_API_URL;
 
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
         if (message.author.bot) return;
-        
+
         if (!message.channel.isThread()) return;
 
         try {
@@ -23,21 +24,21 @@ module.exports = {
 
             // case where thread message not one created by bot
             if (threadRes.rows.length === 0) return;
-            
+
             const threadData = threadRes.rows[0];
-            
+
             if (message.author.id !== threadData.discord_id.toString()) {
-                await message.reply({content: "User not authorized to query this thread", flags: MessageFlags.Ephemeral})
+                await message.reply({ content: "User not authorized to query this thread", flags: MessageFlags.Ephemeral })
                 return;
             }
-            
+
             // display that bot is typing to user
             await message.channel.sendTyping();
 
             // logic for accepting pdf's
             if (message.attachments.size > 0) {
                 const attachment = message.attachments.first();
-                
+
                 // verify it is a pdf
                 if (attachment.contentType === 'application/pdf' || attachment.name.endsWith('.pdf')) {
                     await message.reply(`PDF received: ${attachment.url}. Processing.`)
@@ -46,7 +47,7 @@ module.exports = {
 
                     try {
                         // send pdf url to python microservice via REST api
-                        const response = await fetch('http://localhost:5000/ingest', {
+                        const response = await fetch(`${RAG_API_URL}/ingest`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -70,7 +71,7 @@ module.exports = {
             }
 
             try {
-                const response = await fetch('http://localhost:5000/query', {
+                const response = await fetch(`${RAG_API_URL}/query`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -96,7 +97,7 @@ module.exports = {
                     // split string into messages of size 1999, to bypass discord message length limitation
                     // using 10 messages as a maximum in case of issues
                     const chunks = botResponse.match(/[\s\S]{1,1999}/g) || [];
-                    
+
                     for (let i = 0; i < chunks.length && i < 10; i++) {
                         if (i === 0) {
                             await message.reply(chunks[i]); // Reply to the initial user prompt
@@ -118,6 +119,6 @@ module.exports = {
             console.error('Error executing RAG search pipeline:', error);
             await message.reply('An internal error occurred while processing the knowledge base.');
         }
-        
+
     },
 };
