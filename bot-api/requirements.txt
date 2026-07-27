@@ -13,3 +13,4 @@ sqlalchemy
 asyncpg
 psycopg
 PyJWT
+sentence-transformers
