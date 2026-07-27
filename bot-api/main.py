@@ -215,7 +215,14 @@ async def ingest_document(
     return {"status": "processing", "message": f"Successfully queued {body.filename}"}
 
 
-@app.post("/upload")
+@app.post(
+    "/upload",
+    responses={
+        400: {"description": "Invalid filename."},
+        413: {"description": "File exceeds the upload size limit."},
+        415: {"description": "Only PDF files are accepted."},
+    },
+)
 async def upload_document(
     background_tasks: BackgroundTasks,
     discord_id: Annotated[str, Depends(get_caller_identity)],

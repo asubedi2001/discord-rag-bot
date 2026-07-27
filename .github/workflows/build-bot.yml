@@ -1,0 +1,40 @@
+name: Build Discord Bot Image
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'discord-bot/**' # ONLY runs when files in this folder change
+
+env:
+  REGISTRY: ghcr.io
+  # Appends "-ragbot" to the repository name to make a unique package
+  IMAGE_NAME: ${{ github.repository }}-ragbot 
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: ./discord-bot  # Tell Docker to build from this folder
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
