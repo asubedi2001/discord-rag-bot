@@ -11,6 +11,7 @@ langchain-postgres
 pypdf
 sqlalchemy
 asyncpg
-psycopg
+psycopg[binary]
 PyJWT
 sentence-transformers
+python-multipart
