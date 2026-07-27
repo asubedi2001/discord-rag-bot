@@ -71,6 +71,7 @@ vector_store = PGVector(
     collection_name="discord_documents",
     connection=engine,
     use_jsonb=True,
+    create_extension=False
 )
 
 # authentication dependency
