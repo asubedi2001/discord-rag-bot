@@ -1,6 +1,18 @@
 # build stage
 FROM node:22-slim AS builder
 
+# add environment variable defaults in line with .env.example
+ENV TZ="America/New_York"
+ENV HOST_OS=""
+ENV HOST_HOSTNAME=""
+ENV HOST_CONTAINERNAME=""
+ENV DISCORD_TOKEN=""
+ENV CLIENT_ID=""
+ENV GUILD_ID=""
+ENV DATABASE_URL=""
+ENV RAG_API_URL=""
+ENV INTERNAL_API_KEY=""
+
 WORKDIR /app
 
 # copy manifests first for layer cache efficiency
@@ -21,7 +33,7 @@ WORKDIR /app
 # copy pruned node_modules from the build stage
 COPY --from=builder /app/node_modules ./node_modules
 
-# copy application source (config.json is injected at runtime via secrets/env)
+# copy application source
 COPY index.js db.js deploy-commands.js ./
 COPY commands/ ./commands/
 COPY events/   ./events/

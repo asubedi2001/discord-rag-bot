@@ -5,9 +5,6 @@ node_modules/
 .env
 .env.*
 
-# Runtime config with secrets (inject at runtime)
-config.json
-
 # Logs
 *.log
 logs/
