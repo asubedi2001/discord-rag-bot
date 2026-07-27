@@ -1,6 +1,7 @@
 const { Events, MessageFlags, Collection } = require('discord.js');
 const db = require('../db');
 const RAG_API_URL = process.env.RAG_API_URL;
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
 
 module.exports = {
     name: Events.MessageCreate,
@@ -49,7 +50,10 @@ module.exports = {
                         // send pdf url to python microservice via REST api
                         const response = await fetch(`${RAG_API_URL}/ingest`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Internal-Key': INTERNAL_API_KEY,
+                            },
                             body: JSON.stringify({
                                 discord_id: message.author.id,
                                 file_url: fileUrl,
@@ -73,7 +77,10 @@ module.exports = {
             try {
                 const response = await fetch(`${RAG_API_URL}/query`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Internal-Key': INTERNAL_API_KEY,
+                    },
                     body: JSON.stringify({
                         discord_id: message.author.id,
                         query: message.content,
