@@ -1,4 +1,3 @@
-import React from "react";
 import Sidebar from "../components/Sidebar";
 import Chat from "../components/Chat";
 import type { User } from "../lib/api";
@@ -24,7 +23,7 @@ export default function ChatPage({
   onDocumentDeleted,
   onDocumentUploaded,
   onLogout,
-}: ChatPageProps) {
+}: Readonly<ChatPageProps>) {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#0e0f17]">
       <Sidebar

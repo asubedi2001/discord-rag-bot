@@ -1,9 +1,6 @@
-import React from "react";
-import type { User } from "../lib/api";
-
 interface LoginPageProps {
-  onLogin: () => Promise<void>;
-  isLoading: boolean;
+  readonly onLogin: () => Promise<void>;
+  readonly isLoading: boolean;
 }
 
 export default function LoginPage({ onLogin, isLoading }: LoginPageProps) {

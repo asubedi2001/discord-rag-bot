@@ -28,8 +28,8 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 /** Encodes a Uint8Array to base64url (no padding). */
 function base64urlEncode(bytes: Uint8Array): string {
   // Convert to regular base64 then swap chars + strip padding
-  return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return btoa(String.fromCodePoint(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
 }
