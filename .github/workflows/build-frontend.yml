@@ -1,0 +1,53 @@
+name: Build Frontend Image
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'frontend/**' # ONLY runs when files in this folder change
+
+env:
+  REGISTRY: ghcr.io
+  # Appends "-frontend" to the repository name to make a unique package
+  IMAGE_NAME: ${{ github.repository }}-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./frontend  # Tell Docker to build from this folder
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+          # VITE_* env vars are baked into the JS bundle at build time.
+          # Stored as repository secrets in inside of settings -> secrets
+          build-args: |
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_DISCORD_CLIENT_ID=${{ secrets.VITE_DISCORD_CLIENT_ID }}
+            VITE_DISCORD_REDIRECT_URI=${{ secrets.VITE_DISCORD_REDIRECT_URI }}
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

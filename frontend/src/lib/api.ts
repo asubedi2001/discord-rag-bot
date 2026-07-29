@@ -1,11 +1,8 @@
 /**
- * Typed API client for the RAG Engine backend.
+ * API client for bot api.
  *
- * All functions that require authentication accept a JWT `token` string
- * and send it as `Authorization: Bearer <token>`.
- *
- * Error handling: functions throw on non-2xx responses so callers can catch
- * and handle 401s (e.g., to trigger logout).
+ * All functions that require authentication accept a JWT token string
+ * and send it as "Authorization: Bearer <token>".
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
@@ -22,9 +19,7 @@ export interface AuthResponse {
   user: User;
 }
 
-// ---------------------------------------------------------------------------
-// Auth
-// ---------------------------------------------------------------------------
+// Handle Auth
 
 /**
  * Exchanges a Discord OAuth code + PKCE code_verifier for a signed JWT.
@@ -47,9 +42,7 @@ export async function exchangeCode(
   return res.json() as Promise<AuthResponse>;
 }
 
-// ---------------------------------------------------------------------------
-// Documents
-// ---------------------------------------------------------------------------
+// Handle Documents
 
 /** Returns the list of distinct filenames the user has ingested. */
 export async function fetchDocuments(token: string): Promise<string[]> {
@@ -76,14 +69,12 @@ export async function deleteDocument(token: string, filename: string): Promise<v
   if (!res.ok) throw new Error(`deleteDocument: ${res.status}`);
 }
 
-// ---------------------------------------------------------------------------
-// Ingest
-// ---------------------------------------------------------------------------
+// Handle Ingestion
 
 /**
  * Uploads a PDF file to the backend for ingestion.
- * The file bytes are sent as multipart/form-data so the server — not the
- * client — controls where the file comes from, eliminating SSRF.
+ * The file bytes are sent as multipart/form data so the server controls where
+ * the file comes from.
  */
 export async function ingestDocument(
   token: string,
@@ -103,9 +94,7 @@ export async function ingestDocument(
   if (!res.ok) throw new Error(`ingestDocument: ${res.status}`);
 }
 
-// ---------------------------------------------------------------------------
-// Query
-// ---------------------------------------------------------------------------
+// Handle Queries
 
 /**
  * Sends a user query to the RAG engine and returns the Ollama-generated response string.

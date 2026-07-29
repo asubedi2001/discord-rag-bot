@@ -1,13 +1,10 @@
 /**
- * PKCE (Proof Key for Code Exchange) helpers using the Web Crypto API.
- * These run entirely in the browser — no server involvement.
+ * PKCE helpers using Web Crypto API.
  *
  * Flow:
- *   1. generateCodeVerifier()  → random high-entropy string, stored in sessionStorage
- *   2. generateCodeChallenge() → SHA-256 hash of verifier, base64url-encoded
- *   3. Send challenge in the OAuth redirect; send verifier when exchanging the code
- *
- * Spec: https://datatracker.ietf.org/doc/html/rfc7636
+ *   - generateCodeVerifier() -> random high-entropy string, stored in sessionStorage
+ *   - generateCodeChallenge() -> SHA-256 hash of verifier, base64url-encoded
+ *   - Send challenge in the OAuth redirect; send verifier when exchanging the code
  */
 
 /** Generates a cryptographically random code verifier (43–128 chars, base64url). */

@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import tempfile
 import httpx
 import asyncio
 import aiofiles
@@ -262,7 +263,7 @@ async def upload_document(
 
     # write to a temp file and queue ingestion
     tmp_path = os.path.join(
-        os.getenv("TMPDIR", "/tmp"),
+        tempfile.gettempdir(),
         f"{discord_id}_{uuid.uuid4()}_{safe_filename}"
     )
     async with aiofiles.open(tmp_path, "wb") as f:

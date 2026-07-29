@@ -17,3 +17,4 @@ psycopg[binary]
 PyJWT
 sentence-transformers
 python-multipart
+cryptography

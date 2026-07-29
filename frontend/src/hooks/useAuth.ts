@@ -94,9 +94,10 @@ export function useAuth(): AuthState {
 
       setToken(data.access_token);
       setUser(data.user);
+      console.log("User signed in successfully: ", data.user);
       return true;
     } catch (err) {
-      console.error("OAuth callback failed:", err);
+      console.error("OAuth callback failed: ", err);
       return false;
     } finally {
       setIsLoading(false);
