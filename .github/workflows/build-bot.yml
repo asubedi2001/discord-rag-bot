@@ -4,7 +4,8 @@ on:
   push:
     branches: ['main']
     paths:
-      - 'discord-bot/**' # ONLY runs when files in this folder change
+      - 'discord-bot/**' # runs when files in this folder change
+  workflow_dispatch: # can be run manually
 
 env:
   REGISTRY: ghcr.io

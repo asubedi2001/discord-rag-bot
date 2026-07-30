@@ -4,7 +4,8 @@ on:
   push:
     branches: ['main']
     paths:
-      - 'frontend/**' # ONLY runs when files in this folder change
+      - 'frontend/**' # runs when files in this folder change
+  workflow_dispatch: # can be run manually
 
 env:
   REGISTRY: ghcr.io
