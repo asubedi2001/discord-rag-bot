@@ -20,36 +20,22 @@ COPY . .
 RUN npm run build
 
 
-# runtime stage -> serve static files with Nginx
-FROM nginx:stable-alpine AS runtime
+# runtime stage -> serve production build with vite preview
+FROM node:24-alpine AS runtime
 
-# remove default Nginx welcome page
-RUN rm -rf /usr/share/nginx/html/*
+WORKDIR /app
 
-# copy Vite build output into Nginx's serve directory
-COPY --from=builder /app/dist /usr/share/nginx/html
+# reuse node_modules from builder (vite is a devDependency, needed for preview)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
 
-# SPA fallback: all routes return index.html -> React Router works correctly
-# Listen on 8080 (unprivileged) -> nginx user can bind without root
-RUN printf 'server {\n\
-    listen 8080;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-    location / {\n\
-    try_files $uri $uri/ /index.html;\n\
-    }\n\
-    }\n' > /etc/nginx/conf.d/default.conf
+# copy Vite build output
+COPY --from=builder /app/dist ./dist
 
-# Grant nginx user write access to runtime dirs
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-    /var/cache/nginx \
-    /var/log/nginx \
-    /etc/nginx/conf.d \
-    && touch /var/run/nginx.pid \
-    && chown nginx:nginx /var/run/nginx.pid
+# Switch to nonroot node user
+USER node
 
-USER nginx
+# vite preview defaults to port 4173
+EXPOSE 4173
 
-EXPOSE 8080
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
