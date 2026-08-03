@@ -10,18 +10,20 @@ export default defineConfig(() => {
       tailwindcss(),
       react(),
     ],
-    preview: {
-      allowedHosts: [
-        'bot.aakash-subedi.com',
-        'aakash-subedi.com'
-      ],
-    },
     server: {
+      host: true,
+      port: 5173,
       allowedHosts: [
-        'bot.aakash-subedi.com',
-        'aakash-subedi.com'
-      ],
+        'bot.aakash-subedi.com'
+      ]
     },
+    preview: {
+      host: true,
+      port: 4173,
+      allowedHosts: [
+        'bot.aakash-subedi.com'
+      ]
+    }
   };
 })
 
