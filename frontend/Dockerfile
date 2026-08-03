@@ -4,7 +4,7 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 # install dependencies
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm ci
 
 # VITE_* variables must be present at build time -> inlined into JS bundle
@@ -25,16 +25,13 @@ RUN npm run build
 # runtime stage -> serve production build with nginx
 FROM nginxinc/nginx-unprivileged:alpine-slim AS final
 
-# copy main nginx config
-COPY nginx-main.conf /etc/nginx/nginx.conf
-
 # copy server block config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# copy compiled static assets from builder stage
+# copy compiled static assets from build stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# expose 8080 for outside access
-EXPOSE 8080
+# expose 8081
+EXPOSE 8081
 
 CMD ["nginx", "-g", "daemon off;"]
