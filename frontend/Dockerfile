@@ -31,7 +31,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # copy compiled static assets from build stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# expose 8081
-EXPOSE 8081
+# expose 8080
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
