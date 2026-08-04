@@ -55,11 +55,18 @@ embeddings = HuggingFaceEmbeddings(model_name=HF_EMBED_MODEL)
 # synchronous db engine -> only used once at startup to safely create tables, then disposed.
 SYNC_DB_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://")
 sync_engine = create_engine(SYNC_DB_URL)
+
+# fix issue with multi sql statement not working properly by creating extension manually
+with sync_engine.connect() as conn:
+    conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    conn.commit()
+
 sync_vector_store = PGVector(
     embeddings=embeddings,
     collection_name="discord_documents",
     connection=sync_engine,
     use_jsonb=True,
+    create_extension=False,  # already created above
 )
 sync_vector_store.create_tables_if_not_exists()
 sync_engine.dispose()
@@ -75,7 +82,48 @@ vector_store = PGVector(
     create_extension=False
 )
 
-# authentication dependency
+# authentication dependency — private helpers
+
+async def _auth_bot(request: Request, x_internal_key: str) -> str:
+    """Validate the internal API key and extract discord_id from the request body."""
+    if not INTERNAL_API_KEY or x_internal_key != INTERNAL_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid internal API key.")
+
+    # Read + cache the body so the endpoint Pydantic model can still parse it.
+    # FastAPI normally prohibits reading the body twice; caching on request.state
+    # lets the endpoint's Pydantic model re-parse without a second network read.
+    if not hasattr(request.state, "_body"):
+        request.state._body = await request.body()
+
+    try:
+        body = json.loads(request.state._body)
+        discord_id = body.get("discord_id")
+    except (json.JSONDecodeError, AttributeError):
+        discord_id = None
+
+    if not discord_id:
+        raise HTTPException(status_code=401, detail="discord_id required in body for internal key auth.")
+
+    return str(discord_id)
+
+
+def _auth_web(authorization: str) -> str:
+    """Decode a Bearer JWT and return the discord_id claim."""
+    token = authorization.removeprefix("Bearer ").strip()
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        discord_id = payload.get("discord_id")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="JWT expired.")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid JWT.")
+
+    if not discord_id:
+        raise HTTPException(status_code=401, detail="JWT missing discord_id.")
+
+    return str(discord_id)
+
+
 async def get_caller_identity(
     request: Request,
     x_internal_key: Optional[str] = Header(default=None),
@@ -90,47 +138,13 @@ async def get_caller_identity(
 
     Raises HTTP 401 on any failure.
     """
-
-    # call from bot
     if x_internal_key is not None:
-        if not INTERNAL_API_KEY or x_internal_key != INTERNAL_API_KEY:
-            raise HTTPException(status_code=401, detail="Invalid internal API key.")
+        return await _auth_bot(request, x_internal_key)
 
-        # Read + cache the body so the endpoint Pydantic model can still parse it.
-        # FastAPI normally prohibits reading the body twice; caching on request.state
-        # lets the endpoint's Pydantic model re-parse without a second network read.
-        if not hasattr(request.state, "_body"):
-            request.state._body = await request.body()
+    if authorization and authorization.startswith("Bearer "):
+        return _auth_web(authorization)
 
-        try:
-            body = json.loads(request.state._body)
-            discord_id = body.get("discord_id")
-        except (json.JSONDecodeError, AttributeError):
-            discord_id = None
-
-        if not discord_id:
-            raise HTTPException(status_code=401, detail="discord_id required in body for internal key auth.")
-
-        return str(discord_id)
-
-    # call from web app
-    elif authorization and authorization.startswith("Bearer "):
-        token = authorization.removeprefix("Bearer ").strip()
-        try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            discord_id = payload.get("discord_id")
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="JWT expired.")
-        except jwt.InvalidTokenError:
-            raise HTTPException(status_code=401, detail="Invalid JWT.")
-
-        if not discord_id:
-            raise HTTPException(status_code=401, detail="JWT missing discord_id.")
-
-        return str(discord_id)
-
-    else:
-        raise HTTPException(status_code=401, detail="Missing authentication credentials.")
+    raise HTTPException(status_code=401, detail="Missing authentication credentials.")
 
 
 ### Document Ingestion ###
