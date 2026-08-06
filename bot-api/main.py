@@ -339,7 +339,7 @@ async def query_documents(
                 "system": system_prompt,
                 "stream": False,
                 "options": {
-                    "num_predict": 1536
+                    "num_predict": 512
                 }
             }
             
