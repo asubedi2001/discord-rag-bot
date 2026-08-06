@@ -337,7 +337,10 @@ async def query_documents(
                 "model": OLLAMA_MODEL,
                 "prompt": body.query,
                 "system": system_prompt,
-                "stream": False
+                "stream": False,
+                "options": {
+                    "num_predict": 1536
+                }
             }
             
             ollama_response = await client.post(OLLAMA_URL, json=ollama_payload)
